@@ -10,6 +10,7 @@ import org.hvdw.jexiftoolgui.datetime.DateTime;
 import org.hvdw.jexiftoolgui.editpane.*;
 import org.hvdw.jexiftoolgui.facades.IPreferencesFacade;
 import org.hvdw.jexiftoolgui.metadata.MetaData;
+import org.hvdw.jexiftoolgui.model.FileTreeModel;
 import org.hvdw.jexiftoolgui.view.*;
 import org.slf4j.LoggerFactory;
 
@@ -20,6 +21,8 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.ImageIcon;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.tree.TreeModel;
+import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.dnd.DnDConstants;
@@ -38,7 +41,9 @@ import java.util.ResourceBundle;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
+import static org.hvdw.jexiftoolgui.Utils.isOsFromMicrosoft;
 import static org.hvdw.jexiftoolgui.controllers.StandardFileIO.checkforjexiftoolguiFolder;
+import static org.hvdw.jexiftoolgui.facades.IPreferencesFacade.PreferenceKey.DEFAULT_START_FOLDER;
 import static org.hvdw.jexiftoolgui.facades.IPreferencesFacade.PreferenceKey.PREFERRED_FILEDIALOG;
 
 
@@ -55,14 +60,11 @@ public class mainScreen {
     private JTabbedPane tabbedPaneRight;
     private JButton buttonLoadImages;
     private JButton buttonShowImage;
-    private JPanel LeftPanel;
-    private JPanel LeftbuttonBar;
     private JRadioButton radioButtonViewAll;
     private JPanel ViewRadiobuttonpanel;
     private JPanel ViewDatapanel;
     private JScrollPane ViewDatascrollpanel;
     private JTree FileTree;
-    private JScrollPane Leftscrollpane;
     private JTable tableListfiles;
     private JTable ListexiftoolInfotable;
     private JLabel iconLabel;
@@ -343,6 +345,13 @@ public class mainScreen {
     private JCheckBox xmp2pdfCheckBox;
     private JCheckBox CopyInsideImageMakeCopyOfOriginalscheckBox;
     private JButton copyInsideSaveDataTo;
+    private JTabbedPane lefttabbedPane;
+    private JButton buttonCompare;
+    private JButton buttonSlideShow;
+    private JPanel LeftPanel;
+    private JPanel LeftbuttonBar;
+    private JScrollPane Leftscrollpane;
+    private JTree fileTree;
     private ImageIcon icon;
 
 
@@ -553,6 +562,8 @@ public class mainScreen {
                     String[] params = whichRBselected();
                     Utils.getImageInfoFromSelectedFile(params, files, mainScreen.this.ListexiftoolInfotable);
                     mainScreen.this.buttonShowImage.setEnabled(true);
+                    mainScreen.this.buttonCompare.setEnabled(true);
+                    mainScreen.this.buttonSlideShow.setEnabled(true);
                     //OutputLabel.setText(" Images loaded ...");
                     OutputLabel.setText("");
                     // progressbar enabled immedately after this void run starts in the InvokeLater, so I disable it here at the end of this void run
@@ -636,37 +647,6 @@ public class mainScreen {
         rootPanel.setMinimumSize(new Dimension(1200, 720));
         rootPanel.setPreferredSize(new Dimension(1350, 800));
         rootPanel.setRequestFocusEnabled(true);
-        LeftPanel = new JPanel();
-        LeftPanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
-        rootPanel.add(LeftPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_VERTICAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, new Dimension(320, -1), new Dimension(450, -1), null, 2, false));
-        LeftbuttonBar = new JPanel();
-        LeftbuttonBar.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
-        LeftPanel.add(LeftbuttonBar, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_VERTICAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        buttonLoadDirectory = new JButton();
-        buttonLoadDirectory.setIconTextGap(2);
-        this.$$$loadButtonText$$$(buttonLoadDirectory, this.$$$getMessageFromBundle$$$("translations/program_strings", "btn.loaddirectory"));
-        LeftbuttonBar.add(buttonLoadDirectory);
-        buttonLoadImages = new JButton();
-        buttonLoadImages.setIconTextGap(2);
-        this.$$$loadButtonText$$$(buttonLoadImages, this.$$$getMessageFromBundle$$$("translations/program_strings", "btn.loadimages"));
-        buttonLoadImages.setToolTipText("Load images for which you want to view or edit metadata");
-        LeftbuttonBar.add(buttonLoadImages);
-        buttonShowImage = new JButton();
-        buttonShowImage.setEnabled(false);
-        buttonShowImage.setIconTextGap(2);
-        this.$$$loadButtonText$$$(buttonShowImage, this.$$$getMessageFromBundle$$$("translations/program_strings", "btn.displayimages"));
-        buttonShowImage.setToolTipText("Display the selected image in the default image viewer (if supported movies will play in the default movie player)");
-        buttonShowImage.putClientProperty("hideActionText", Boolean.FALSE);
-        LeftbuttonBar.add(buttonShowImage);
-        Leftscrollpane = new JScrollPane();
-        LeftPanel.add(Leftscrollpane, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        tableListfiles = new JTable();
-        tableListfiles.setAutoResizeMode(0);
-        tableListfiles.setPreferredScrollableViewportSize(new Dimension(-1, -1));
-        tableListfiles.setShowHorizontalLines(true);
-        tableListfiles.setShowVerticalLines(false);
-        tableListfiles.setToolTipText("Double-clicking the thumbnail or filename will open the image in the default viewer");
-        Leftscrollpane.setViewportView(tableListfiles);
         tabbedPaneRight = new JTabbedPane();
         rootPanel.add(tabbedPaneRight, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, new Dimension(700, -1), new Dimension(850, -1), null, 2, false));
         ViewDatapanel = new JPanel();
@@ -2112,6 +2092,78 @@ public class mainScreen {
         lblLoadedFiles = new JLabel();
         lblLoadedFiles.setText("");
         panel57.add(lblLoadedFiles);
+        lefttabbedPane = new JTabbedPane();
+        rootPanel.add(lefttabbedPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_VERTICAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, new Dimension(320, -1), new Dimension(450, -1), null, 0, false));
+        final JPanel panel58 = new JPanel();
+        panel58.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        lefttabbedPane.addTab("Preview mode", panel58);
+        LeftPanel = new JPanel();
+        LeftPanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel58.add(LeftPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_VERTICAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, new Dimension(320, -1), new Dimension(450, -1), null, 0, false));
+        LeftbuttonBar = new JPanel();
+        LeftbuttonBar.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
+        LeftPanel.add(LeftbuttonBar, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_VERTICAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        buttonLoadDirectory = new JButton();
+        buttonLoadDirectory.setIcon(new ImageIcon(getClass().getResource("/icons/outline_folder_black_24.png")));
+        buttonLoadDirectory.setIconTextGap(2);
+        buttonLoadDirectory.setPreferredSize(new Dimension(26, 26));
+        buttonLoadDirectory.setText("");
+        buttonLoadDirectory.setToolTipText(this.$$$getMessageFromBundle$$$("translations/program_strings", "btn.loaddirectory"));
+        LeftbuttonBar.add(buttonLoadDirectory);
+        buttonLoadImages = new JButton();
+        buttonLoadImages.setIcon(new ImageIcon(getClass().getResource("/icons/outline_collections_black_24dp.png")));
+        buttonLoadImages.setIconTextGap(2);
+        buttonLoadImages.setMaximumSize(new Dimension(26, 26));
+        buttonLoadImages.setMinimumSize(new Dimension(26, 26));
+        buttonLoadImages.setPreferredSize(new Dimension(26, 26));
+        buttonLoadImages.setText("");
+        buttonLoadImages.setToolTipText(this.$$$getMessageFromBundle$$$("translations/program_strings", "btn.loadimages"));
+        LeftbuttonBar.add(buttonLoadImages);
+        buttonShowImage = new JButton();
+        buttonShowImage.setEnabled(false);
+        buttonShowImage.setIcon(new ImageIcon(getClass().getResource("/icons/outline_open_in_new_black_24dp.png")));
+        buttonShowImage.setIconTextGap(2);
+        buttonShowImage.setMaximumSize(new Dimension(26, 26));
+        buttonShowImage.setMinimumSize(new Dimension(26, 26));
+        buttonShowImage.setPreferredSize(new Dimension(26, 26));
+        buttonShowImage.setText("");
+        buttonShowImage.setToolTipText(this.$$$getMessageFromBundle$$$("translations/program_strings", "btn.displayimages"));
+        buttonShowImage.putClientProperty("hideActionText", Boolean.FALSE);
+        LeftbuttonBar.add(buttonShowImage);
+        buttonCompare = new JButton();
+        buttonCompare.setEnabled(false);
+        buttonCompare.setIcon(new ImageIcon(getClass().getResource("/icons/outline_compare_arrows_black_24dp.png")));
+        buttonCompare.setMaximumSize(new Dimension(26, 26));
+        buttonCompare.setMinimumSize(new Dimension(26, 26));
+        buttonCompare.setPreferredSize(new Dimension(26, 26));
+        buttonCompare.setText("");
+        buttonCompare.setToolTipText(this.$$$getMessageFromBundle$$$("translations/program_strings", "btn.compareimgs"));
+        LeftbuttonBar.add(buttonCompare);
+        buttonSlideShow = new JButton();
+        buttonSlideShow.setEnabled(false);
+        buttonSlideShow.setIcon(new ImageIcon(getClass().getResource("/icons/outline_slideshow_black_24dp.png")));
+        buttonSlideShow.setMaximumSize(new Dimension(26, 26));
+        buttonSlideShow.setMinimumSize(new Dimension(26, 26));
+        buttonSlideShow.setPreferredSize(new Dimension(26, 26));
+        buttonSlideShow.setText("");
+        buttonSlideShow.setToolTipText(this.$$$getMessageFromBundle$$$("translations/program_strings", "btn.slideshow"));
+        LeftbuttonBar.add(buttonSlideShow);
+        Leftscrollpane = new JScrollPane();
+        LeftPanel.add(Leftscrollpane, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        tableListfiles = new JTable();
+        tableListfiles.setAutoResizeMode(0);
+        tableListfiles.setPreferredScrollableViewportSize(new Dimension(-1, -1));
+        tableListfiles.setShowHorizontalLines(true);
+        tableListfiles.setShowVerticalLines(false);
+        tableListfiles.setToolTipText(this.$$$getMessageFromBundle$$$("translations/program_strings", "lp.tooltip"));
+        Leftscrollpane.setViewportView(tableListfiles);
+        final JPanel panel59 = new JPanel();
+        panel59.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        lefttabbedPane.addTab("FileTree", panel59);
+        final JScrollPane scrollPane2 = new JScrollPane();
+        panel59.add(scrollPane2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        fileTree = new JTree();
+        scrollPane2.setViewportView(fileTree);
         ButtonGroup buttonGroup;
         buttonGroup = new ButtonGroup();
         buttonGroup.add(CalcNorthRadioButton);
@@ -2869,22 +2921,6 @@ public class mainScreen {
     }
 
 
-    void fileNamesTableMouseListener() {
-        // Use the mouse listener for the single cell double-click selection for the left table to be able to
-        // display the image in the default viewer
-
-        tableListfiles.addMouseListener(new MouseAdapter() {
-            public void mousePressed(MouseEvent mouseEvent) {
-                JTable table =(JTable) mouseEvent.getSource();
-                Point point = mouseEvent.getPoint();
-                int row = table.rowAtPoint(point);
-                if (mouseEvent.getClickCount() == 2 && table.getSelectedRow() != -1) {
-                    Utils.displaySelectedImageInExternalViewer();
-                    logger.info("double-click registered");
-                }
-            }
-        });
-    }
     // endregion
 
     /*
@@ -3031,7 +3067,8 @@ public class mainScreen {
 
 
         // Use the mouselistener for the double-click to display the image
-        fileNamesTableMouseListener();
+        // on both the filetree and the filenamestable
+        MouseListeners.fileTreeAndFileNamesTableMouseListener(tableListfiles, ListexiftoolInfotable, fileTree, whichRBselected());
         //Use the table listener for theselection of multiple cells
         listSelectionModel = tableListfiles.getSelectionModel();
         tableListfiles.setRowSelectionAllowed(true);
@@ -3041,6 +3078,17 @@ public class mainScreen {
 
         //Listen to drop events
         rootPanelDropListener();
+
+        //File root = new File(System.getProperty("user.home"));
+        String defaultStartFolder = prefs.getByKey(DEFAULT_START_FOLDER, "");
+        if ("".equals(defaultStartFolder)) {
+            defaultStartFolder = System.getProperty("user.home");
+        }
+        File treeStartFolder = new File(defaultStartFolder);
+        FileTreeModel model = new FileTreeModel(treeStartFolder);
+        fileTree.setModel(model);
+        fileTree.setRootVisible(false);
+        fileTree.setShowsRootHandles(false); // will not show the "thingy"  in front of the root folder
 
         // Make left "tableListfiles" and right "ListexiftoolInfotable" tables read-only (un-editable)
         // This also fixes the double-click bug on the image where it retrieves the object name of the images on double-click
@@ -3098,7 +3146,6 @@ public class mainScreen {
         });
 
         // Should work, but doesn't work
-
         Application.OS_NAMES os = Utils.getCurrentOsName();
         try {
             if (os == Application.OS_NAMES.APPLE) {
@@ -3122,6 +3169,7 @@ public class mainScreen {
         } else {
             frame.pack();
         }
+
         //frame.setLocationRelativeTo(null);
         frame.setLocationByPlatform(true);
         frame.setVisible(true);
